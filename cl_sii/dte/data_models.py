@@ -18,7 +18,7 @@ In the domain of a DTE, a:
 import dataclasses
 from dataclasses import field as dc_field
 from datetime import date, datetime
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Sequence
 
 import pydantic
 
@@ -630,7 +630,12 @@ class DteXmlReferencia:
                 self.razon_ref)
 
 
-@dataclasses.dataclass(frozen=True)
+@pydantic.dataclasses.dataclass(
+    frozen=True,
+    config=type('Config', (), dict(
+        arbitrary_types_allowed=True,
+    ))
+)
 class DteXmlData(DteDataL1):
 
     """
@@ -706,6 +711,14 @@ class DteXmlData(DteDataL1):
     receptor_email: Optional[str] = dc_field(default=None)
     """
     Email address of the "receptor" of the DTE.
+    """
+
+    referencias: Optional[Sequence[DteXmlReferencia]] = dc_field(default=None)
+    """
+    List of structs for ``Referencia`` XML elements.
+
+    ..warning::
+        The items MUST be ordered according to their ``numero_linea_ref``.
     """
 
     def __post_init__(self) -> None:
@@ -793,3 +806,80 @@ class DteXmlData(DteDataL1):
             emisor_email=self.emisor_email,
             receptor_email=self.receptor_email,
         )
+
+    ###########################################################################
+    # Validators
+    ###########################################################################
+
+    @pydantic.validator('referencias')
+    def validate_referencias_numero_linea_ref_order(cls, v: object) -> object:
+        if isinstance(v, Sequence):
+            for idx, referencia in enumerate(v, start=1):
+                if referencia.numero_linea_ref != idx:
+                    raise ValueError("items must be ordered according to their 'numero_linea_ref'")
+        return v
+
+    @pydantic.root_validator(skip_on_failure=True)
+    def validate_referencias_rut_otro_is_consistent_with_tipo_dte(
+        cls, values: Mapping[str, object],
+    ) -> Mapping[str, object]:
+        referencias = values['referencias']
+        tipo_dte = values['tipo_dte']
+
+        if (
+            isinstance(referencias, Sequence)
+            and isinstance(tipo_dte, TipoDteEnum)
+            and tipo_dte not in constants.DTE_REFERENCIA_RUTOTR_TIPO_DOC_SET
+        ):
+            for referencia in referencias:
+                if referencia.rut_otro:
+                    raise ValueError(
+                        f"Setting a 'rut_otro' is not a valid option for this 'tipo_dte':"
+                        f" 'tipo_dte' == {tipo_dte!r},"
+                        f" 'Referencia' number {referencia.numero_linea_ref}.",
+                    )
+
+        return values
+
+    @pydantic.root_validator(skip_on_failure=True)
+    def validate_referencias_rut_otro_is_consistent_with_emisor_rut(
+        cls, values: Mapping[str, object],
+    ) -> Mapping[str, object]:
+        referencias = values['referencias']
+        emisor_rut = values['emisor_rut']
+
+        if (
+            isinstance(referencias, Sequence)
+            and isinstance(emisor_rut, Rut)
+        ):
+            for referencia in referencias:
+                if referencia.rut_otro and referencia.rut_otro == emisor_rut:
+                    raise ValueError(
+                        f"'rut_otro' must be different from 'emisor_rut':"
+                        f" {referencia.rut_otro!r} == {emisor_rut!r},"
+                        f" 'Referencia' number {referencia.numero_linea_ref}.",
+                    )
+
+        return values
+
+    @pydantic.root_validator(skip_on_failure=True)
+    def validate_referencias_codigo_ref_is_consistent_with_tipo_dte(
+        cls, values: Mapping[str, object],
+    ) -> Mapping[str, object]:
+        referencias = values['referencias']
+        tipo_dte = values['tipo_dte']
+
+        if (
+            isinstance(referencias, Sequence)
+            and isinstance(tipo_dte, TipoDteEnum)
+            and tipo_dte in constants.DTE_REFERENCIA_CODREF_TIPO_DOC_MANDATORY_SET
+        ):
+            for referencia in referencias:
+                if not referencia.codigo_ref:
+                    raise ValueError(
+                        f"'codigo_ref' is mandatory for this 'tipo_dte':"
+                        f" 'tipo_dte' == {tipo_dte!r},"
+                        f" 'Referencia' number {referencia.numero_linea_ref}.",
+                    )
+
+        return values
