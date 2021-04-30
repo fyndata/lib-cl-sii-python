@@ -6,6 +6,187 @@ https://github.com/fyntex/lib-cl-sii-python/blob/f57a326/cl_sii/data/ref/factura
 
 """
 import enum
+from datetime import date
+from typing import FrozenSet
+
+
+@enum.unique
+class TipoDocumentoEnum(enum.IntEnum):
+
+    """
+    Enum of "Tipo de Documento".
+
+    They are defined in a document and also an XML schema.
+
+    Source:
+      - from official document "FORMATO DOCUMENTOS TRIBUTARIOS ELECTRÓNICOS (2019-11-15)" (retrieved on 2020-01-30)
+        (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/docs/dte/formato-dtes/2019-11-15-formato-dtes-v2.2.y.pdf)
+      - from official schema ``SiiTypes_v10.xsd``, the XML type (enum) ``DocType``. (retrieved on 2021-03-25)
+        (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/code/rtc/2019-12-12-schema_cesion/schema_cesion/SiiTypes_v10.xsd)
+
+    Notes:
+    * It is assumed that ``DocType`` it is the main enumerative for "Tipos de Documentos"
+      because even though it has the same elements as the enumerative ``DOCType``, in its
+      description it does not contain the adjective "Electrónico".
+      In any case, the governing definition should be taken as the one contained in the official
+      document and not the XML schema.
+    * The elements of the following enums are strictly subgroups of enum ``DocType``:
+      * ``DOCType``: "Todos los tipos de Documentos Tributarios Electronicos".
+                     (The subgroup of ``DocType`` that are considered "Electrónicos")
+      * ``DTEType``: "Tipos de Documentos Tributarios Electronicos"
+                    (The subgroup of ``DOCType`` for the choice ``DTEDefType/Documento``)
+      * ``LIQType``: "Tipos de Liquidaciones".
+                     (The subgroup of ``DOCType`` for the choice ``DTEDefType/Liquidacion``)
+      * ``EXPType``: "Tipos de Facturas de Exportacion".
+                     (The subgroup of ``DOCType`` for the choice ``DTEDefType/Exportaciones``)
+      * ``DTEFacturasType``: "Tipos de Documentos Tributarios Electronicos"
+                              (The subset of elements in ``DTEType`` and ``LIQType`` that are
+                               "cedibles" or in other words can be included in a "cesión")
+    """  # noqa: E501
+
+    FACTURA = 30
+    """Factura."""
+
+    FACTURA_NO_AFECTA_O_EXENTA = 32
+    """Factura de venta bienes y servicios no afectos o exentos de IVA."""
+
+    BOLETA = 35
+    """Boleta."""
+
+    BOLETA_EXENTA = 38
+    """Boleta exenta."""
+
+    FACTURA_COMPRA = 45
+    """Factura de compra."""
+
+    NOTA_DEBITO = 55
+    """Nota de débito."""
+
+    NOTA_CREDITO = 60
+    """Nota de crédito."""
+
+    LIQUIDACION = 103
+    """Liquidación."""
+
+    LIQUIDACION_FACTURA = 40
+    """Liquidación factura."""
+
+    LIQUIDACION_FACTURA_ELECTRONICA = 43
+    """Liquidación-Factura Electrónica."""
+    # For more info about a "liquidación-factura [electrónica]" see:
+    #   - SII / FAQ / "¿Qué son las Liquidaciones-Factura?"
+    #     http://www.sii.cl/preguntas_frecuentes/catastro/001_012_0247.htm
+    #   - SII / FAQ / "¿Para qué se utiliza la Liquidación Factura Electrónica?"
+    #     http://www.sii.cl/preguntas_frecuentes/catastro/001_012_3689.htm
+    #   - SII / FAQ / "¿Qué documentos tributarios deben emitir las partes involucradas en un
+    #     contrato de consignación?"
+    #     http://www.sii.cl/preguntas_frecuentes/catastro/001_012_2619.htm
+    #   - SII / resoluciones / "Resolución Exenta SII N°108 del 24 de Octubre del 2005.
+    #     Establece normas y procedimientos de operación referente a la emisión de
+    #     liquidaciones-facturas electrónicas"
+    #     http://www.sii.cl/documentos/resoluciones/2005/reso108.htm
+
+    FACTURA_ELECTRONICA = 33
+    """Factura electrónica de venta."""
+
+    FACTURA_NO_AFECTA_O_EXENTA_ELECTRONICA = 34
+    """Factura electrónica de venta, no afecta o exenta de IVA."""
+    # aka 'Factura no Afecta o Exenta Electrónica'
+    # aka 'Factura Electrónica de Venta de Bienes y Servicios No afectos o Exento de IVA'
+
+    BOLETA_ELECTRONICA = 39
+    """Boleta electrónica."""
+
+    BOLETA_EXENTA_ELECTRONICA = 41
+    """Boleta exenta electrónica."""
+
+    FACTURA_COMPRA_ELECTRONICA = 46
+    """Factura electrónica de compra."""
+    # aka 'Factura de Compra Electrónica'
+    # Name should have been 'Factura Electrónica de Compra'.
+
+    NOTA_DEBITO_ELECTRONICA = 56
+    """Nota electrónica de débito."""
+    # aka 'Nota de Débito Electrónica'
+
+    NOTA_CREDITO_ELECTRONICA = 61
+    """Nota electrónica de crédito."""
+    # aka 'Nota de Crédito Electrónica'
+
+    GUIA_DESPACHO = 50
+    """Guía de despacho."""
+
+    GUIA_DESPACHO_ELECTRONICA = 52
+    """Guía electrónica de despacho."""
+    # aka 'Guía de Despacho Electrónica'
+
+    FACTURA_EXPORTACION_ELECTRONICA = 110
+    """Factura de exportación electrónica."""
+
+    NOTA_DEBITO_EXPORTACION_ELECTRONICA = 111
+    """Nota de débito de exportación electrónica."""
+
+    NOTA_CREDITO_EXPORTACION_ELECTRONICA = 112
+    """Nota de crédito de exportación electrónica."""
+
+    ORDEN_COMPRA = 801
+    """Orden de compra."""
+
+    NOTA_PEDIDO = 802
+    """Nota de pedido."""
+
+    CONTRATO = 803
+    """Contrato."""
+
+    RESOLUCION = 804
+    """Resolución."""
+
+    PROCESO_CHILE_COMPRA = 805
+    """Proceso ChileCompra."""
+
+    FICHA_CHILE_COMPRA = 806
+    """Ficha ChileCompra."""
+
+    DOCUMENTO_UNICO_SALIDA = 807
+    """Documento Único de Salida (DUS)."""
+
+    GUIA_TRANSPORTE_MARITIMO = 808
+    """Guía de transporte marítimo."""
+    # aka B/L (Conocimiento de embarque).
+    # Source:
+    #   - INSTRUCCIONES PARA LLENAR LA DECLARACIÓN JURADA F3602
+    #     https://www.sii.cl/pagina/iva/inst_exportaciones_3602.htm
+
+    GUIA_TRANSPORTE_AEREO = 809
+    """Guía de transporte aéreo (AWB)."""
+    # aka 'Air Will Bill'
+    # Source:
+    #   - INSTRUCCIONES PARA LLENAR LA DECLARACIÓN JURADA F3602
+    #     https://www.sii.cl/pagina/iva/inst_exportaciones_3602.htm
+
+    MANIFIESTO_INTERNACIONAL_CARGA = 810
+    """Manifiesto Internacional de Carga (MIC)."""
+    # Source:
+    #   - INSTRUCCIONES PARA LLENAR LA DECLARACIÓN JURADA F3602
+    #     https://www.sii.cl/pagina/iva/inst_exportaciones_3602.htm
+
+    CARTA_PORTE = 811
+    """Carta de Porte."""
+
+    RESOLUCION_SNA = 812
+    """Resolución del SNA donde califica Servicios de Exportación."""
+
+    PASAPORTE = 813
+    """Pasaporte."""
+
+    CERTIFICADO_DEPOSITO_BOLSA_PRODUCTO_CHILE = 814
+    """Certificado de Depósito Bolsa Prod. Chile."""
+
+    VALE_PRENDA_BOLSA_PRODUCTO_CHILE = 815
+    """Vale de Prenda Bolsa Prod. Chile."""
+
+    CODIGO_INSCRIPCION_REGISTRO_ACUERDOS = 820
+    """Código de Inscripción en el Registro de Acuerdos con Plazo de Pago Excepcional."""
 
 
 ###############################################################################
@@ -209,3 +390,193 @@ class TipoDteEnum(enum.IntEnum):
     @property
     def receptor_is_vendedor(self) -> bool:
         return self.is_factura_compra
+
+
+###############################################################################
+# DTE Fields / "Referencia" / "Número Secuencial de Línea de Referencia"
+###############################################################################
+
+# Sequence number of the "referencia"
+#
+# > Campo: Número de Línea o Número de Secuencia
+# > Descripción: Número de la referencia
+# > Tipo: NUM
+# > Validación: 1 hasta 40
+#
+# Note:
+#   There is a mismatch in the maximum value allowed for this element between
+#   the definition of "Información de Referencia" in the document "FORMATO DOCUMENTOS
+#   TRIBUTARIOS ELECTRÓNICOS (pp. 41 - 43)" and the restriction for this
+#   element in the XML schema. The first mentions a permitted range of 1 - 40 and the
+#   second 1 - 99. Here we will use the definition at "FORMATO DOCUMENTOS TRIBUTARIOS
+#   ELECTRÓNICOS (pp. 41 - 43)".
+#
+# Source:
+#   - Document "FORMATO DOCUMENTOS TRIBUTARIOS ELECTRÓNICOS (2019-11-15)" (retrieved on 2020-01-30)
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/docs/dte/formato-dtes/2019-11-15-formato-dtes-v2.2.y.pdf)
+#   - XML element 'DTEDefType/Documento/Referencia/NroLinRef'
+#     - description: "Numero Secuencial de Linea de Referencia"
+#     - XML type: 'xs:positiveInteger'
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/code/rtc/2019-12-12-schema_cesion/schema_cesion/DTE_v10.xsd#L1763-L1772)
+DTE_REFERENCIA_LINE_NUMBER_MIN_VALUE: int = 1
+DTE_REFERENCIA_LINE_NUMBER_MAX_VALUE: int = 40
+
+
+###############################################################################
+# DTE Fields / "Referencia" / "Folio de Referencia"
+###############################################################################
+
+# The folio of the document referred to.
+#
+# > Campo: Folio de Referencia
+# > Descripción: Identificación del documento de referencia.
+# > Tipo: ALFA
+# > Validación: Longitud de 1 hasta 18
+#
+#
+# Source:
+#   - Document "FORMATO DOCUMENTOS TRIBUTARIOS ELECTRÓNICOS (2019-11-15)" (retrieved on 2020-01-30)
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/docs/dte/formato-dtes/2019-11-15-formato-dtes-v2.2.y.pdf)
+#   - XML element 'DTEDefType/Documento/Referencia/FolioRef'
+#     - description: "Folio del Documento de Referencia"
+#     - XML type: 'SiiDte:FolioRType'
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/code/rtc/2019-12-12-schema_cesion/schema_cesion/DTE_v10.xsd#L1799-L1803)
+DTE_REFERENCIA_FOLIO_MIN_LENGTH: int = 1
+DTE_REFERENCIA_FOLIO_MAX_LENGTH: int = 18
+
+
+###############################################################################
+# DTE Fields / "Referencia" / "RUT Otro contribuyente"
+###############################################################################
+
+# The RUT of the "emisor" of the document referred to.
+#
+# > Campo: RUT Otro contribuyente
+# > Descripción: Sólo si el documento de referencia es de tipo tributario y
+#                fue emitido por otro contribuyente
+# > Tipo: ALFA
+# > Validación:
+#       - Distinto del RUT emisor del DTE
+#       - Solo aplica para un subconjunto de los tipos de documentos
+#         en `TipoDocumentoEnum` [46, 56, 61, 110, 111, 112]
+#
+#
+# Source:
+#   - Document "FORMATO DOCUMENTOS TRIBUTARIOS ELECTRÓNICOS (2019-11-15)" (retrieved on 2020-01-30)
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/docs/dte/formato-dtes/2019-11-15-formato-dtes-v2.2.y.pdf)
+#   - XML element 'DTEDefType/Documento/Referencia/RUTOtr'
+#     - description: "RUT Otro Contribuyente"
+#     - XML type: 'SiiDte:RUTType'
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/code/rtc/2019-12-12-schema_cesion/schema_cesion/DTE_v10.xsd#L1804-L1808)
+# TODO: Use `TipoDocumentoEnum` after deprecate `TipoDteEnum`
+DTE_REFERENCIA_RUTOTR_TIPO_DOC_SET: FrozenSet[TipoDteEnum] = frozenset({
+    TipoDteEnum.NOTA_CREDITO_ELECTRONICA,
+    TipoDteEnum.NOTA_DEBITO_ELECTRONICA,
+    TipoDteEnum.FACTURA_COMPRA_ELECTRONICA,
+})
+
+
+###############################################################################
+# DTE Fields / "Referencia" / "Fecha de la Referencia"
+###############################################################################
+
+# The 'fecha_emision' of the document referred to.
+#
+# > Campo: Fecha de la Referencia
+# > Descripción: Fecha del documento de referencia.
+# > Tipo: ALFA
+# > Validación: Desde 2002-08-01 hasta 2050-12-31
+#
+#
+# Source:
+#   - Document "FORMATO DOCUMENTOS TRIBUTARIOS ELECTRÓNICOS (2019-11-15)" (retrieved on 2020-01-30)
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/docs/dte/formato-dtes/2019-11-15-formato-dtes-v2.2.y.pdf)
+#   - XML element 'DTEDefType/Documento/Referencia/FchRef'
+#     - description: "Fecha de la Referencia."
+#     - XML type: 'SiiDte:FechaType'
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/code/rtc/2019-12-12-schema_cesion/schema_cesion/DTE_v10.xsd#L1809-L1813)
+DTE_REFERENCIA_FECHA_NOT_BEFORE: date = date(2002, 8, 1)
+DTE_REFERENCIA_FECHA_NOT_AFTER: date = date(2050, 12, 31)
+
+
+###############################################################################
+# DTE Fields / "Referencia" / "Código de referencia"
+###############################################################################
+
+# The 'fecha_emision' of the document referred to.
+#
+# > Campo: Código de referencia
+# > Descripción: Fecha del documento de referencia.
+# > Tipo: NUM
+# > Validación: Requerido para 56, 61, 111, 112
+#
+# Source:
+#   - Document "FORMATO DOCUMENTOS TRIBUTARIOS ELECTRÓNICOS (2019-11-15)" (retrieved on 2020-01-30)
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/docs/dte/formato-dtes/2019-11-15-formato-dtes-v2.2.y.pdf)
+#   - XML element 'DTEDefType/Documento/Referencia/CodRef'
+#     - description: "Tipo de Uso de la Referencia."
+#     - XML type: 'xs:positiveInteger'
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/code/rtc/2019-12-12-schema_cesion/schema_cesion/DTE_v10.xsd#L1814-L1837)
+# TODO: Use `TipoDocumentoEnum` after deprecate `TipoDteEnum`
+DTE_REFERENCIA_CODREF_TIPO_DOC_MANDATORY_SET: FrozenSet[TipoDteEnum] = frozenset({
+    TipoDteEnum.NOTA_CREDITO_ELECTRONICA,
+    TipoDteEnum.NOTA_DEBITO_ELECTRONICA,
+})
+
+
+@enum.unique
+class CodigoReferenciaEnum(enum.IntEnum):
+
+    """
+    Enum of "Código de referencia".
+
+    Source:
+      - from official document "FORMATO DOCUMENTOS TRIBUTARIOS ELECTRÓNICOS (2019-11-15)" (retrieved on 2020-01-30)
+        (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/docs/dte/formato-dtes/2019-11-15-formato-dtes-v2.2.y.pdf)
+      - from official schema ``SiiTypes_v10.xsd``, the XML type (enum) ``CodRef``. (retrieved on 2021-03-25)
+        (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/code/rtc/2019-12-12-schema_cesion/schema_cesion/SiiTypes_v10.xsd)
+
+    Notes:
+    > Código utilizado para los siguientes casos:
+        a) Nota de Crédito que elimina documento de referencia en forma
+        completa (Factura de venta, Nota de débito, o Factura de compra
+        b) Nota de crédito que corrige un texto del documento de referencia
+        (ver campo Corrección Factura)
+        c) Nota de Débito que elimina una Nota de Crédito en la referencia
+        en forma completa
+        d) Notas de crédito o débito que corrigen montos de otro documento
+
+        CASOS a) b) y c) DEBEN TENER UN ÚNICO DOCUMENTO DE REFERENCIA.
+
+    """  # noqa: E501
+
+    ANULA_DOCUMENTO_REFERENCIA = 1
+    """Anula Documento de Referencia."""
+
+    CORRIGE_TEXTO_DOCUMENTO_REFERENCIA = 2
+    """Corrige Texto del Documento de Referencia."""
+
+    CORRIGE_MONTO_DOCUMENTO_REFERENCIA = 3
+    """Corrige Montos"""
+
+
+###############################################################################
+# DTE Fields / "Referencia" / "Razón referencia"
+###############################################################################
+
+# The reason the document is being referenced.
+#
+# > Campo: Razón referencia
+# > Descripción: Razón explícita por la que se referencia el Documento.
+# > Tipo: ALFA
+# > Validación: Longitud de 0 hasta 90
+#
+#
+# Source:
+#   - Document "FORMATO DOCUMENTOS TRIBUTARIOS ELECTRÓNICOS (2019-11-15)" (retrieved on 2020-01-30)
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/docs/dte/formato-dtes/2019-11-15-formato-dtes-v2.2.y.pdf)
+#   - XML element 'DTEDefType/Documento/Referencia/FolioRef'
+#     - description: "Folio del Documento de Referencia"
+#     - XML type: 'SiiDte:FolioRType'
+#     (https://github.com/cl-sii-extraoficial/archivos-oficiales/blob/master/src/code/rtc/2019-12-12-schema_cesion/schema_cesion/DTE_v10.xsd#L1838-L1847)
+DTE_REFERENCIA_RAZON_MAX_LENGTH: int = 90
